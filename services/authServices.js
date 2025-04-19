@@ -67,3 +67,8 @@ export const logoutUser = async (id) => {
 
   await user.update({ token: null });
 };
+
+export const setAvatar = async (id, avatarURL) => {
+  const user = await findUser({ id });
+  await user.update({ avatarURL });
+};
