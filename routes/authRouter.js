@@ -1,6 +1,7 @@
 import express from "express";
 
 import authenticate from "../middlewares/authenticate.js";
+import upload from "../middlewares/upload.js";
 
 import authControllers from "../controllers/authControllers.js";
 
@@ -12,6 +13,7 @@ const authRouter = express.Router();
 
 authRouter.post(
   "/register",
+  upload.single("avatar"),
   validateBody(authRegisterSchema),
   authControllers.registerController
 );
