@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-
+import gravatar from "gravatar";
 import * as authServices from "../services/authServices.js";
 
 import ctrlWrapper from "../decorators/ctrlWrapper.js";
@@ -8,14 +8,11 @@ import ctrlWrapper from "../decorators/ctrlWrapper.js";
 const avatarsDir = path.resolve("public", "avatars");
 
 const registerController = async (req, res) => {
-  let avatarURL = null;
-  if (req.file) {
-    const { path: oldPath, filename } = req.file;
-    const newPath = path.join(avatarsDir, filename);
-    await fs.rename(oldPath, newPath);
-    avatarURL = path.join("avatar", "avatars", filename);
-  }
-  const { email, subscription } = await authServices.registerUser(req.body);
+  const avatarURL = gravatar.url(req.body.email);
+  const { email, subscription } = await authServices.registerUser({
+    ...req.body,
+    avatarURL,
+  });
 
   res.status(201).json({
     user: {
@@ -50,9 +47,23 @@ const getCurrentController = (req, res) => {
   });
 };
 
+const changeAvatar = async (req, res, next) => {
+  let avatarURL = null;
+  if (req.file) {
+    const { id } = req.user;
+    const { path: oldPath, filename } = req.file;
+    const newPath = path.join(avatarsDir, filename);
+    await fs.rename(oldPath, newPath);
+    avatarURL = path.join("avatars", filename);
+    await authServices.setAvatar(id, avatarURL);
+    return res.json({ avatarURL });
+  }
+};
+
 export default {
   registerController: ctrlWrapper(registerController),
   loginController: ctrlWrapper(loginController),
   logoutController: ctrlWrapper(logoutController),
   getCurrentController: ctrlWrapper(getCurrentController),
+  changeAvatarController: ctrlWrapper(changeAvatar),
 };
