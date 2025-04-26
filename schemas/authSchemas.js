@@ -11,3 +11,10 @@ export const authLoginSchema = Joi.object({
   email: Joi.string().pattern(emailRegexp).required(),
   password: Joi.string().min(6).required(),
 });
+
+export const authVerifyEmailSchema = Joi.object({
+  email: Joi.string()
+    .trim()
+    .pattern(emailRegexp, "example@example.com")
+    .required(),
+});
