@@ -6,8 +6,12 @@ import upload from "../middlewares/upload.js";
 import authControllers from "../controllers/authControllers.js";
 
 import validateBody from "../decorators/validateBody.js";
-
-import { authRegisterSchema, authLoginSchema } from "../schemas/authSchemas.js";
+import isEmptyBody from "../middlewares/isEmptyBody.js";
+import {
+  authRegisterSchema,
+  authLoginSchema,
+  authVerifyEmailSchema,
+} from "../schemas/authSchemas.js";
 
 const authRouter = express.Router();
 
@@ -32,6 +36,17 @@ authRouter.patch(
   upload.single("photo"),
   authenticate,
   authControllers.changeAvatarController
+);
+
+authRouter.post(
+  "/verify",
+  isEmptyBody,
+  validateBody(authVerifyEmailSchema),
+  authControllers.resendVerifyController
+);
+authRouter.get(
+  "/verify/:verificationToken",
+  authControllers.verifyEmailController
 );
 
 export default authRouter;

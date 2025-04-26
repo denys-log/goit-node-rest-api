@@ -60,10 +60,32 @@ const changeAvatar = async (req, res, next) => {
   }
 };
 
+export const verifyEmail = async (req, res) => {
+  const { verificationToken } = req.params;
+  const result = await authServices.verifyEmail(verificationToken);
+  if (!result) throw HttpError(404, "User not found");
+  res.json({
+    status: 200,
+    message: "Verification successful",
+  });
+};
+
+export const resendVerify = async (req, res) => {
+  const { email } = req.body;
+  const result = await authServices.resendVerify(email);
+  if (!result) throw HttpError(404, "User not found");
+  res.json({
+    status: 200,
+    message: "Verification email sent",
+  });
+};
+
 export default {
   registerController: ctrlWrapper(registerController),
   loginController: ctrlWrapper(loginController),
   logoutController: ctrlWrapper(logoutController),
   getCurrentController: ctrlWrapper(getCurrentController),
   changeAvatarController: ctrlWrapper(changeAvatar),
+  verifyEmailController: ctrlWrapper(verifyEmail),
+  resendVerifyController: ctrlWrapper(resendVerify),
 };

@@ -1,4 +1,6 @@
 import bcrypt from "bcrypt";
+import { v4 as uuidv4 } from "uuid";
+import sendEmail from "../helpers/sendEmail.js";
 
 import User from "../db/models/User.js";
 
@@ -25,8 +27,21 @@ export const registerUser = async (data) => {
   }
 
   const hashPassword = await bcrypt.hash(password, 10);
+  const verificationToken = uuidv4();
 
-  return User.create({ ...data, password: hashPassword });
+  try {
+    await sendEmail(email, verificationToken);
+  } catch (error) {
+    throw HttpError(500, "Register verify email error");
+  }
+
+  const newUser = User.create({
+    ...data,
+    password: hashPassword,
+    verificationToken,
+  });
+
+  return newUser;
 };
 
 export const loginUser = async (data) => {
@@ -48,6 +63,10 @@ export const loginUser = async (data) => {
     throw HttpError(401, "Email or password invalid");
   }
 
+  if (!user.verify) {
+    throw HttpError(401, "Email not verified");
+  }
+
   const payload = {
     email,
   };
@@ -57,6 +76,33 @@ export const loginUser = async (data) => {
   await user.update({ token });
 
   return { token };
+};
+
+export const verifyEmail = async (verificationToken) => {
+  const user = await findUser({ verificationToken });
+
+  if (!user) {
+    throw HttpError(404, "User not found");
+  }
+
+  return user.update(
+    { verificationToken: null, verify: true },
+    {
+      returning: true,
+    }
+  );
+};
+
+export const resendVerify = async (email) => {
+  const user = await findUser({ email });
+  if (!user) return null;
+  if (user.verify) throw HttpError(404, "Verification has already been passed");
+  try {
+    await sendEmail(email, user.verificationToken);
+  } catch (error) {
+    throw HttpError(500, "Register verify email error");
+  }
+  return true;
 };
 
 export const logoutUser = async (id) => {
